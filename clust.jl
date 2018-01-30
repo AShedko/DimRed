@@ -1,7 +1,7 @@
 using NIfTI, ExcelReaders, DataFrames
 using Revise,JLD
 using KurchatovFMRI, ProgressMeter
-include("../fMRI_ISC_classify/Jthing/consts.jl")
+include("consts.jl")
 
 δ(ind::CartesianIndex, d=1) = CartesianRange(ind-d, ind+d)
 i2s(i) = ind2sub(SHAPE,i)
@@ -14,12 +14,12 @@ s2i(s::CartesianIndex) = sub2ind(SHAPE,s.I...)
 Pointwise distance.
 Ignores previous observation
 """
-pointwise(pr,x,y) = pr+abs(x-y)
+pointwise(pr,x,y) = pr+abs(abs(x)-abs(y))
 
 """
 Online Kolmogorov distance
 """
-kolmogorov(p,x,y) = max(p, abs(x-y))
+kolmogorov(p,x,y) = max(p, abs(abs(x)-abs(y)))
 
 """
  get_dist_matrix(data)

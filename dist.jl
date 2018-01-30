@@ -14,12 +14,12 @@ s2i(s::CartesianIndex) = sub2ind(SHAPE,s.I...)
 Pointwise distance.
 Ignores previous observation
 """
-pointwise(pr,x,y) = pr+abs(x-y)
+pointwise(pr,x,y) = pr + abs(abs(x)-abs(y))
 
 """
 Online Kolmogorov distance
 """
-kolmogorov(p,x,y) = max(p, abs(x-y))
+kolmogorov(p,x,y) = max(p, abs(abs(x)-abs(y)))
 
 """
  get_dist_matrix(data)
@@ -61,7 +61,6 @@ function main(patient)
 end
 
 main(parse(Int,ARGS[1]))
-
 
 # dbscan(mat, 5.0, 5)
 # using PyImport
