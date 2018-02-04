@@ -28,7 +28,7 @@ function main(patient)# Regex gives        year         -  month    -    day
     end
   end
 
-  assert(mean((o->value(o)[1]).(Ss)) > 1e-10, "Mean trend should be significant")
+  @assert mean([value(o)[1][1] for o in Ss]) > 1e-8 "Mean trend should be significant"
   info("writing trend")
   open("out/trend_$patient.ser", "w") do f
     m = [value(o)[1][1] for o in Ss]
