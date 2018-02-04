@@ -1,42 +1,37 @@
 using NIfTI, ExcelReaders, DataFrames
-using Revise,JLD, Glob
+using Revise
 using KurchatovFMRI, ProgressMeter, OnlineStats
 include("consts.jl")
 
-function main(patient)# Regex gives        year         -  month    -    day   _ time...
-  kd = KData(PATH,"$patient/swvugaf[0-9][0-9][0-9][0-9]\-[0-9][0-9]\-[0-9][0-9]_[0-9]*.nii","logs/$patient.*",
-    x->x)
-  Ys = kd.data
-  Ss = [LinReg(1) for i in 1:SIZE] #Sequences
+function main(patient)# Regex gives        year         -  month    -    day
+  kd = KData(PATH,"$patient/swvugaf[0-9][0-9][0-9][0-9]\-[0-9][0-9]\-[0-9][0-9].nii","logs/$patient.*", x->x)
   len = size(kd.data,4)
+  Ys = reshape(kd.data,(SIZE,len))
+  Ss = [Series(LinReg(1)) for i in 1:SIZE] #Sequences
   n_chunks = 600
   low = 1;
   chunksize = len÷n_chunks;
   high = low + chunksize-1;
   Xs = Array{Int}((len,1))
   Xs[:,1] = 1:len
-  chunks = [Array{Float64}((chunksize,1)) for i =1:n_chunks-1]
-  push!(chunks, Array{Float64}((len % chunksize,1)))
-  for ch in chunks
-    ch[:,1] = low:high
-    low = low+chunksize
-    high = min(high + chunksize, len);
-  end
-  info("Chunks formed")
-  
+
   low = 1;
   high = low + chunksize-1;
-  @showprogress 3 "Computing chunks " for ch in chunks
+  @showprogress 3 "Computing chunks " for ll in 1:n_chunks
     @inbounds for ind in 1:SIZE
-      Series((ch,[Ys[l][ind] for l in low:high]),Ss[ind])
+      fit!(Ss[ind],( view(low:high, :, :),[Ys[ind,l] for l in low:high]))
     end
     low = low+chunksize
-    high = min(high + chunksize, len);
+    high = high+chunksize;
+    if ll == n_chunks
+      high = len
+    end
   end
 
+  assert(mean((o->value(o)[1]).(Ss)) > 1e-10, "Mean trend should be significant")
   info("writing trend")
-  open("trend_$patient.ser", "w") do f
-    m = (o->o.β[1]).(Ss)
+  open("out/trend_$patient.ser", "w") do f
+    m = [value(o)[1][1] for o in Ss]
     serialize(f, m)
   end
 end
